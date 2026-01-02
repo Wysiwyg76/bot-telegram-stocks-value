@@ -184,12 +184,6 @@ export default {
   async fetch(req, env) {
     if (req.method !== 'POST') return new Response('OK');
 
-    // ❌ Filtrer les requêtes favicon.ico et robots.txt
-    const url = new URL(req.url);
-    if (url.pathname === '/favicon.ico' || url.pathname === '/robots.txt') {
-      return new Response('Not Found', { status: 404 });
-    }
-
     const update = await req.json();
     const chatId = update.message?.chat?.id;
     const text = update.message?.text;
