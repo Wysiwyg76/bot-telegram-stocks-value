@@ -1,11 +1,11 @@
 export const assetLabels = {
-  'PAASI.PAR': 'ETF Asie',
-  'PTPXE.PAR': 'ETF Topix Japon',
-  'VERX.PAR': 'ETF Europe',
-  'ESE.PAR': 'ETF S&P500',
-  'LQQ.PAR': 'ETF Nasdaq x2',
-  'WPEA.PAR': 'ETF World',
-  '4BRZ.PAR': 'ETF Brésil',
-  'PPFD.DEX': 'ETF Gold',
-  'FCO2': 'ETF Carbone'
+  'PAASI.PA': 'ETF Asie',
+  'PTPXE.PA': 'ETF Topix Japon',
+  'VERX.PA': 'ETF Europe',
+  'ESE.PA': 'ETF S&P500',
+  'LQQ.PA': 'ETF Nasdaq x2',
+  'WPEA.PA': 'ETF World',
+  '4BRZ.PA': 'ETF Brésil',
+  'PPFD.DE': 'ETF Gold',
+  'FCO2.DE': 'ETF Carbone'
 };
