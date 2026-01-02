@@ -151,7 +151,7 @@ function assetMessage(asset, w, m, price) {
 
   return (
     `*${asset.name}*\n` +
-    `  • Prix clôture : *\`${safe(price)} ${currency}*\`\n` +
+    `  • Prix clôture : *\`${safe(price)} ${currency}\`*\n` +
     `  • RSI hebdo : *\`${safe(w?.current)}\` ${arrow(w?.current, w?.previous)}*\n` +
     `  • RSI mensuel : *\`${safe(m?.current)}\` ${arrow(m?.current, m?.previous)}*\n\n`
   );
