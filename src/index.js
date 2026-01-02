@@ -89,12 +89,15 @@ function calculateRSI(closes, period = 14) {
 async function getRSI(symbol, interval, env) {
   const cacheKey = `RSI_${interval}_${symbol}`;
   const ttl = interval === 'weekly' ? TTL.RSI_WEEKLY : TTL.RSI_MONTHLY;
+
+  // Vérifie cache
   const cached = await env.ASSET_CACHE.get(cacheKey, 'json');
   if (cached && !isExpired(cached.ts, ttl)) return cached;
 
-  await sleep(1500); // pause 1,5 secondes avant chaque requête
+  await sleep(1000); // pause pour ne pas spammer Yahoo
 
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=3y&interval=${interval === 'weekly' ? '1wk' : '1mo'}`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5y&interval=${interval === 'weekly' ? '1wk' : '1mo'}`;
+
   try {
     const res = await fetch(url, {
       headers: {
@@ -103,11 +106,27 @@ async function getRSI(symbol, interval, env) {
         "Referer": "https://finance.yahoo.com/"
       }
     });
+
     const data = await res.json();
     const closes = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close;
-    const rsiValue = calculateRSI(closes, 14);
 
-    const result = { current: rsiValue, previous: null, ts: now() };
+    if (!Array.isArray(closes) || closes.length < 15) {
+      console.log(`Yahoo RSI warning: not enough data for ${symbol} ${interval}`);
+      return cached ?? null;
+    }
+
+    // RSI actuel : dernières 14 périodes
+    const currentRSI = calculateRSI(closes.slice(-15));
+
+    // RSI précédent : 14 périodes avant la dernière
+    const previousRSI = calculateRSI(closes.slice(-16, -1));
+
+    const result = {
+      current: currentRSI,
+      previous: previousRSI,
+      ts: now()
+    };
+
     await env.ASSET_CACHE.put(cacheKey, JSON.stringify(result));
     return result;
 
