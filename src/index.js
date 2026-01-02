@@ -215,7 +215,7 @@ export default {
     }
 
     if (text === '/start') {
-      const keyboard = Object.values(assetLabels).map(l => [l]);
+      const keyboard = Object.values(assetLabels).map(l => [l.name]);
       keyboard.push(['Tous les actifs']);
 
       await sendTelegram(chatId, 'Sélectionne un actif 👇', env);
