@@ -24,7 +24,9 @@ async function getRSI(symbol, interval, env) {
 
 async function getPrice(symbol, env) {
   const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${env.ALPHA_VANTAGE_API_KEY}`;
+  console.log("Alpha request:", url);
   const data = await alphaFetch(url, env);
+  console.log("Alpha response:", data);
   const series = data['Time Series (Daily)'];
   return parseFloat(series[Object.keys(series)[0]]['4. close']);
 }
@@ -103,7 +105,6 @@ export default {
     }
 
     console.log("Received Telegram update:", update);
-    console.log(env.ALLOWED_CHAT_IDS);
 
     if (!chatId || !text) return new Response('OK');
 
