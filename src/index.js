@@ -173,16 +173,14 @@ async function sendTelegram(chatId, text, env) {
    BUILD MESSAGE
 ======================= */
 
-async function buildAllAssetsMessage(env) {
+async function buildAssetsMessageForSubset(env, subset){
   const date = new Date().toLocaleDateString('fr-FR');
   let msg = `*📅 ${date}*\n\n`;
-
-  for (const s of Object.keys(assetLabels)) {
-    const w = await getRSI(s, 'weekly', env);
-    const m = await getRSI(s, 'monthly', env);
-    const p = await getPrice(s, env);
-
-    msg += assetMessage(assetLabels[s], w, m, p);
+  for(const s of subset){
+    const w = await getRSI(s,'weekly',env);
+    const m = await getRSI(s,'monthly',env);
+    const p = await getPrice(s,env);
+    msg += assetMessage(assetLabels[s],w,m,p);
   }
   return msg;
 }
@@ -192,65 +190,70 @@ async function buildAllAssetsMessage(env) {
 ======================= */
 
 export default {
-  async fetch(req, env) {
+  async fetch(req,env){
     const url = new URL(req.url);
 
     // Ignore favicon / robots.txt
-    if (url.pathname === '/favicon.ico' || url.pathname === '/robots.txt') {
-      return new Response('Not Found', { status: 404 });
-    }
-
-    if (req.method !== 'POST') return new Response('OK');
+    if(url.pathname==='/favicon.ico' || url.pathname==='/robots.txt') return new Response('Not Found',{status:404});
+    if(req.method!=='POST') return new Response('OK');
 
     const update = await req.json();
     const chatId = update.message?.chat?.id;
     const text = update.message?.text;
+    if(!chatId || !text) return new Response('OK');
 
-    if (!chatId || !text) return new Response('OK');
-
-    const allowed = env.ALLOWED_CHAT_IDS.split(',').map(id => parseInt(id.trim(), 10));
-    if (!allowed.includes(chatId)) {
-      console.log('Unauthorized chat:', chatId);
-      return new Response('Unauthorized', { status: 403 });
+    const allowed = env.ALLOWED_CHAT_IDS.split(',').map(id=>parseInt(id.trim(),10));
+    if(!allowed.includes(chatId)){
+      console.log('Unauthorized chat:',chatId);
+      return new Response('Unauthorized',{status:403});
     }
 
-    if (text === '/start') {
-      const keyboard = Object.values(assetLabels).map(l => [l.name]);
+    if(text==='/start'){
+      const keyboard = Object.values(assetLabels).map(l=>[l.name]);
       keyboard.push(['Tous les actifs']);
-
-      await sendTelegram(chatId, 'Sélectionne un actif 👇', env);
-      await fetch(`https://api.telegram.org/bot${env.TELEGRAM_API_KEY}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text: 'Menu', reply_markup: { keyboard, resize_keyboard: true } })
+      await sendTelegram(chatId,'Sélectionne un actif 👇',env);
+      await fetch(`https://api.telegram.org/bot${env.TELEGRAM_API_KEY}/sendMessage`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({chat_id:chatId,text:'Menu',reply_markup:{keyboard,resize_keyboard:true}})
       });
       return new Response('OK');
     }
 
-    if (text === 'Tous les actifs') {
-      const msg = await buildAllAssetsMessage(env);
-      await sendTelegram(chatId, msg, env);
+    if(text==='Tous les actifs'){
+      const msg = await buildAssetsMessageForSubset(env,Object.keys(assetLabels));
+      await sendTelegram(chatId,msg,env);
       return new Response('OK');
     }
 
-    const symbol = Object.keys(assetLabels).find(k => assetLabels[k].name === text);
-    if (!symbol) return new Response('OK');
+    const symbol = Object.keys(assetLabels).find(k=>assetLabels[k].name===text);
+    if(!symbol) return new Response('OK');
 
-    const date = new Date().toLocaleDateString('fr-FR');
-    let msg = `*📅 ${date}*\n\n`;
-
-    const w = await getRSI(symbol, 'weekly', env);
-    const m = await getRSI(symbol, 'monthly', env);
-    const p = await getPrice(symbol, env);
-
-    msg += assetMessage(assetLabels[symbol], w, m, p);
-    await sendTelegram(chatId, msg, env);
-
+    const msg = await buildAssetsMessageForSubset(env,[symbol]);
+    await sendTelegram(chatId,msg,env);
     return new Response('OK');
   },
 
-  async scheduled(_, env) {
-    const msg = await buildAllAssetsMessage(env);
-    await sendTelegram(env.TELEGRAM_CHAT_ID, msg, env);
+async scheduled(_,env){
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 2 = mardi
+    const dayOfMonth = today.getDate();
+
+    // Chat1 à chaque fois
+    const CHAT1_ASSETS = ['ESE.PA','VERX.AS','PAASI.PA','DBXJ.DE','4BRZ.DE','PPFB.DE','BTC-USD'];
+    const msg1 = await buildAssetsMessageForSubset(env,CHAT1_ASSETS);
+    await sendTelegram(env.TELEGRAM_CHAT_ID1,msg1,env);
+
+    // Chat2 uniquement le 2ème mardi du mois
+    const firstDayOfMonth = new Date(today.getFullYear(),today.getMonth(),1).getDay();
+    const daysUntilFirstTuesday = (2-firstDayOfMonth+7)%7;
+    const secondTuesday = 1 + daysUntilFirstTuesday + 7;
+
+    if(dayOfMonth===secondTuesday){
+      const CHAT2_ASSETS = ['WPEA.PA'];
+      const msg2 = await buildAssetsMessageForSubset(env,CHAT2_ASSETS);
+      await sendTelegram(env.TELEGRAM_CHAT_ID2,msg2,env);
+    }
   }
+
 };
