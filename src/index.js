@@ -1,64 +1,49 @@
 import { env } from "cloudflare:workers";
-import { assetLabels } from "./assets.js";
+import { assetLabels } from './assets.js';
 
 /* =======================
-   CONFIGURATION
+   CONSTANTES & UTILS
 ======================= */
 
 const RATE_LIMIT_DELAY = 13000;
 
-const TTL_PRICE = 6 * 60 * 60;        // 6h
-const TTL_RSI_WEEKLY = 24 * 60 * 60;  // 24h
-const TTL_RSI_MONTHLY = 7 * 24 * 60 * 60; // 7j
-const TTL_ERROR = 5 * 60;             // 5 min
+const TTL = {
+  PRICE: 24 * 60 * 60 * 1000,
+  RSI_WEEKLY: 7 * 24 * 60 * 60 * 1000,
+  RSI_MONTHLY: 30 * 24 * 60 * 60 * 1000
+};
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const now = () => Date.now();
+const isExpired = (ts, ttl) => !ts || now() - ts > ttl;
 
 /* =======================
-   ALPHAVANTAGE FETCH
+   ALPHA VANTAGE
 ======================= */
 
-async function alphaFetch(url, cacheKey, ttl, env) {
-  // Cache
-  const cached = await env.ASSET_CACHE.get(cacheKey, { type: "json" });
-  if (cached) return cached;
-
+async function alphaFetch(url) {
   await sleep(RATE_LIMIT_DELAY);
 
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
+  const res = await fetch(url);
+  const data = await res.json();
 
-    // AlphaVantage errors
-    if (data.Note || data["Error Message"]) {
-      const err = { error: true, message: data.Note || data["Error Message"] };
-      await env.ASSET_CACHE.put(cacheKey, JSON.stringify(err), {
-        expirationTtl: TTL_ERROR
-      });
-      return err;
-    }
-
-    await env.ASSET_CACHE.put(cacheKey, JSON.stringify(data), {
-      expirationTtl: ttl
-    });
-
-    return data;
-  } catch (e) {
-    const err = { error: true, message: e.message };
-    await env.ASSET_CACHE.put(cacheKey, JSON.stringify(err), {
-      expirationTtl: TTL_ERROR
-    });
-    return err;
+  if (data?.Note || data?.Information || data?.message) {
+    throw new Error('AlphaVantage quota exceeded');
   }
+
+  return data;
 }
 
 /* =======================
-   RSI
+   DATA FETCHERS (CACHED)
 ======================= */
 
 async function getRSI(symbol, interval, env) {
-  const ttl = interval === "weekly" ? TTL_RSI_WEEKLY : TTL_RSI_MONTHLY;
   const cacheKey = `RSI_${interval}_${symbol}`;
+  const ttl = interval === 'weekly' ? TTL.RSI_WEEKLY : TTL.RSI_MONTHLY;
+
+  const cached = await env.ASSET_CACHE.get(cacheKey, 'json');
+  if (cached && !isExpired(cached.ts, ttl)) return cached;
 
   const url =
     `https://www.alphavantage.co/query?function=RSI` +
@@ -66,57 +51,73 @@ async function getRSI(symbol, interval, env) {
     `&time_period=14&series_type=close` +
     `&apikey=${env.ALPHA_VANTAGE_API_KEY}`;
 
-  const data = await alphaFetch(url, cacheKey, ttl, env);
+  try {
+    const data = await alphaFetch(url);
+    const rsi = data['Technical Analysis: RSI'];
+    const keys = Object.keys(rsi);
 
-  if (data.error || !data["Technical Analysis: RSI"]) {
-    return { current: null, previous: null };
+    const result = {
+      current: parseFloat(rsi[keys[0]].RSI),
+      previous: parseFloat(rsi[keys[1]].RSI),
+      ts: now()
+    };
+
+    await env.ASSET_CACHE.put(cacheKey, JSON.stringify(result));
+    return result;
+
+  } catch (e) {
+    console.log(`RSI error ${symbol} ${interval}`, e.message);
+    return cached ?? null;
   }
-
-  const keys = Object.keys(data["Technical Analysis: RSI"]);
-  if (keys.length < 2) return { current: null, previous: null };
-
-  return {
-    current: parseFloat(data["Technical Analysis: RSI"][keys[0]].RSI),
-    previous: parseFloat(data["Technical Analysis: RSI"][keys[1]].RSI)
-  };
 }
-
-/* =======================
-   PRICE
-======================= */
 
 async function getPrice(symbol, env) {
   const cacheKey = `PRICE_${symbol}`;
+  const cached = await env.ASSET_CACHE.get(cacheKey, 'json');
+
+  if (cached && !isExpired(cached.ts, TTL.PRICE)) {
+    return cached.value;
+  }
 
   const url =
     `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY` +
     `&symbol=${symbol}&apikey=${env.ALPHA_VANTAGE_API_KEY}`;
 
-  const data = await alphaFetch(url, cacheKey, TTL_PRICE, env);
+  try {
+    const data = await alphaFetch(url);
+    const series = data['Time Series (Daily)'];
+    const price = parseFloat(series[Object.keys(series)[0]]['4. close']);
 
-  if (data.error || !data["Time Series (Daily)"]) return null;
+    await env.ASSET_CACHE.put(
+      cacheKey,
+      JSON.stringify({ value: price, ts: now() })
+    );
 
-  const key = Object.keys(data["Time Series (Daily)"])[0];
-  return parseFloat(data["Time Series (Daily)"][key]["4. close"]);
+    return price;
+
+  } catch (e) {
+    console.log(`Price error ${symbol}`, e.message);
+    return cached?.value ?? null;
+  }
 }
 
 /* =======================
-   MESSAGE
+   FORMATAGE MESSAGE
 ======================= */
 
 const arrow = (c, p) =>
-  typeof c === "number" && typeof p === "number"
-    ? c > p ? "⬈" : c < p ? "⬊" : "➞"
-    : "➞";
+  typeof c === 'number' && typeof p === 'number'
+    ? c > p ? '⬈' : c < p ? '⬊' : '➞'
+    : '➞';
 
-const fmt = v => (typeof v === "number" ? v.toFixed(2) : "N/A");
+const safe = v => typeof v === 'number' ? v.toFixed(2) : 'N/A';
 
 function assetMessage(label, w, m, price) {
   return (
     `*📊 ${label}*\n` +
-    `• *RSI Hebdo* : \`${fmt(w?.current)}\` ${arrow(w?.current, w?.previous)}\n` +
-    `• *RSI Mensuel* : \`${fmt(m?.current)}\` ${arrow(m?.current, m?.previous)}\n` +
-    `• *Prix* : \`${fmt(price)} €\`\n\n`
+    `• *RSI Hebdo* : \`${safe(w?.current)}\` ${arrow(w?.current, w?.previous)}\n` +
+    `• *RSI Mensuel* : \`${safe(m?.current)}\` ${arrow(m?.current, m?.previous)}\n` +
+    `• *Prix* : \`${safe(price)} €\`\n\n`
   );
 }
 
@@ -126,32 +127,31 @@ function assetMessage(label, w, m, price) {
 
 async function sendTelegram(chatId, text, env) {
   await fetch(`https://api.telegram.org/bot${env.TELEGRAM_API_KEY}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       chat_id: chatId,
       text,
-      parse_mode: "Markdown"
+      parse_mode: 'Markdown'
     })
   });
 }
 
 /* =======================
-   BUILD MESSAGE
+   MESSAGE BUILDERS
 ======================= */
 
 async function buildAllAssetsMessage(env) {
-  const date = new Date().toLocaleDateString("fr-FR");
+  const date = new Date().toLocaleDateString('fr-FR');
   let msg = `*📅 ${date}*\n\n`;
 
-  for (const symbol of Object.keys(assetLabels)) {
-    const w = await getRSI(symbol, "weekly", env);
-    const m = await getRSI(symbol, "monthly", env);
-    const p = await getPrice(symbol, env);
+  for (const s of Object.keys(assetLabels)) {
+    const w = await getRSI(s, 'weekly', env);
+    const m = await getRSI(s, 'monthly', env);
+    const p = await getPrice(s, env);
 
-    msg += assetMessage(assetLabels[symbol], w, m, p);
+    msg += assetMessage(assetLabels[s], w, m, p);
   }
-
   return msg;
 }
 
@@ -161,63 +161,63 @@ async function buildAllAssetsMessage(env) {
 
 export default {
   async fetch(req, env) {
-    if (req.method !== "POST") return new Response("OK");
+    if (req.method !== 'POST') return new Response('OK');
 
     const update = await req.json();
     const chatId = update.message?.chat?.id;
     const text = update.message?.text;
 
-    if (!chatId || !text) return new Response("OK");
+    if (!chatId || !text) return new Response('OK');
 
     const allowed = env.ALLOWED_CHAT_IDS
-      .split(",")
-      .map(id => parseInt(id));
+      .split(',')
+      .map(id => parseInt(id.trim(), 10));
 
     if (!allowed.includes(chatId)) {
-      console.log("Unauthorized:", chatId);
-      return new Response("Forbidden", { status: 403 });
+      console.log('Unauthorized chat:', chatId);
+      return new Response('Unauthorized', { status: 403 });
     }
 
-    // START
-    if (text === "/start") {
+    /* /start */
+    if (text === '/start') {
       const keyboard = Object.values(assetLabels).map(l => [l]);
-      keyboard.push(["Tous les actifs"]);
+      keyboard.push(['Tous les actifs']);
 
-      await sendTelegram(chatId, "Sélectionne un actif 👇", env);
+      await sendTelegram(chatId, 'Sélectionne un actif 👇', env);
       await fetch(`https://api.telegram.org/bot${env.TELEGRAM_API_KEY}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chatId,
-          text: "Menu",
+          text: 'Menu',
           reply_markup: { keyboard, resize_keyboard: true }
         })
       });
-      return new Response("OK");
+      return new Response('OK');
     }
 
-    // ALL
-    if (text === "Tous les actifs") {
-      await sendTelegram(chatId, await buildAllAssetsMessage(env), env);
-      return new Response("OK");
+    /* Tous les actifs */
+    if (text === 'Tous les actifs') {
+      const msg = await buildAllAssetsMessage(env);
+      await sendTelegram(chatId, msg, env);
+      return new Response('OK');
     }
 
-    // SINGLE
+    /* Actif unique */
     const symbol = Object.keys(assetLabels).find(k => assetLabels[k] === text);
-    if (!symbol) return new Response("OK");
+    if (!symbol) return new Response('OK');
 
-    const date = new Date().toLocaleDateString("fr-FR");
-    const w = await getRSI(symbol, "weekly", env);
-    const m = await getRSI(symbol, "monthly", env);
+    const date = new Date().toLocaleDateString('fr-FR');
+    let msg = `*📅 ${date}*\n\n`;
+
+    const w = await getRSI(symbol, 'weekly', env);
+    const m = await getRSI(symbol, 'monthly', env);
     const p = await getPrice(symbol, env);
 
-    await sendTelegram(
-      chatId,
-      `*📅 ${date}*\n\n` + assetMessage(assetLabels[symbol], w, m, p),
-      env
-    );
+    msg += assetMessage(assetLabels[symbol], w, m, p);
+    await sendTelegram(chatId, msg, env);
 
-    return new Response("OK");
+    return new Response('OK');
   },
 
   async scheduled(_, env) {
