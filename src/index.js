@@ -251,8 +251,8 @@ async scheduled(_,env){
 
     if(dayOfMonth===secondTuesday){
       const CHAT2_ASSETS = ['WPEA.PA'];
-      const msg2 = await buildAssetsMessageForSubset(env,CHAT2_ASSETS);
-      await sendTelegram(env.TELEGRAM_CHAT_ID2,msg2,env);
+      //const msg2 = await buildAssetsMessageForSubset(env,CHAT2_ASSETS);
+      //await sendTelegram(env.TELEGRAM_CHAT_ID2,msg2,env);
     }
   }
 
