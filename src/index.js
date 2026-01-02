@@ -142,14 +142,14 @@ async function getRSI(symbol, interval, env) {
 
 const arrow = (c, p) =>
   typeof c === 'number' && typeof p === 'number'
-    ? c > p*1.01 ? '⬈' : c < p*0.99 ? '⬊' : '➞' : '➞';
+    ? c > p ? '⬈' : c < p ? '⬊' : '➞' : '➞';
 
 const safe = v => typeof v === 'number' ? v.toFixed(1) : 'N/A';
 
 function assetMessage(label, w, m, price) {
   return (
     `*${label}*\n` +
-    `  • Prix clôture : *\`${safe(price)} €*\`\n` +
+    `  • Prix clôture : *\`${safe(price)} ${currency}*\`\n` +
     `  • RSI hebdo : *\`${safe(w?.current)}\` ${arrow(w?.current, w?.previous)}*\n` +
     `  • RSI mensuel : *\`${safe(m?.current)}\` ${arrow(m?.current, m?.previous)}*\n\n`
   );
