@@ -72,6 +72,14 @@ export default {
     const chatId = update.message?.chat?.id;
     const text = update.message?.text;
 
+    // Récupère les IDs autorisés depuis la variable d'environnement
+    const allowedChatIds = env.ALLOWED_CHAT_IDS.split(',').map(id => parseInt(id));
+
+    if (!allowedChatIds.includes(chatId)) {
+      console.log(`Unauthorized access attempt: ${chatId}`);
+      return new Response("Unauthorized", { status: 403 });
+    }
+
     console.log("Received Telegram update:", update);
 
     if (!chatId || !text) return new Response('OK');
