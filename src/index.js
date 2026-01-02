@@ -105,8 +105,8 @@ export default {
     const date = new Date().toLocaleDateString('fr-FR');
     let msg = `*📅 ${date}*\n\n`;
 
-    const w = await getRSI(symbol, 'weekly', env);
-    const m = await getRSI(symbol, 'monthly', env);
+    const w = '';//await getRSI(symbol, 'weekly', env);
+    const m = '';//await getRSI(symbol, 'monthly', env);
     const p = await getPrice(symbol, env);
 
     msg += assetMessage(assetLabels[symbol], w, m, p);
