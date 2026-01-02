@@ -31,13 +31,34 @@ async function getPrice(symbol, env) {
 const arrow = (c, p) => (c > p ? '⬈' : c < p ? '⬊' : '➞');
 
 function assetMessage(label, w, m, price) {
+  // Fonctions auxiliaires pour sécuriser l'accès
+  const safeNumber = (num) => (typeof num === "number" ? num.toFixed(2) : "N/A");
+  const safeArrow = (current, previous) => {
+    if (typeof current === "number" && typeof previous === "number") {
+      return current > previous ? "⬈" : current < previous ? "⬊" : "➞";
+    }
+    return "➞"; // flèche neutre si données manquantes
+  };
+
+  // RSI hebdo
+  const rsiWeeklyCurrent = w?.current ?? null;
+  const rsiWeeklyPrevious = w?.previous ?? null;
+
+  // RSI mensuel
+  const rsiMonthlyCurrent = m?.current ?? null;
+  const rsiMonthlyPrevious = m?.previous ?? null;
+
+  // Prix
+  const safePrice = typeof price === "number" ? price.toFixed(2) : "N/A";
+
   return (
     `*📊 ${label}*\n` +
-    `• *RSI Hebdo* : \`${w.current.toFixed(2)}\` ${arrow(w.current, w.previous)}\n` +
-    `• *RSI Mensuel* : \`${m.current.toFixed(2)}\` ${arrow(m.current, m.previous)}\n` +
-    `• *Prix* : \`${price.toFixed(2)} €\`\n\n`
+    `• *RSI Hebdo* : \`${safeNumber(rsiWeeklyCurrent)}\` ${safeArrow(rsiWeeklyCurrent, rsiWeeklyPrevious)}\n` +
+    `• *RSI Mensuel* : \`${safeNumber(rsiMonthlyCurrent)}\` ${safeArrow(rsiMonthlyCurrent, rsiMonthlyPrevious)}\n` +
+    `• *Prix* : \`${safePrice} €\`\n\n`
   );
 }
+
 
 async function sendTelegram(chatId, text, env) {
   await fetch(`https://api.telegram.org/bot${env.TELEGRAM_API_KEY}/sendMessage`, {
@@ -59,7 +80,7 @@ async function buildAllAssetsMessage(env) {
     const w = '';//await getRSI(s, 'weekly', env);
     const m = '';//await getRSI(s, 'monthly', env);
     const p = '';//await getPrice(s, env);
-    //msg += assetMessage(assetLabels[s], w, m, p);
+    msg += assetMessage(assetLabels[s], w, m, p);
   }
   return msg;
 }
@@ -117,7 +138,7 @@ export default {
     const m = '';//await getRSI(symbol, 'monthly', env);
     const p = '';//await getPrice(symbol, env);
 
-    //msg += assetMessage(assetLabels[symbol], w, m, p);
+    msg += assetMessage(assetLabels[symbol], w, m, p);
     await sendTelegram(chatId, msg, env);
 
     return new Response('OK');
