@@ -38,7 +38,7 @@ async function getPrice(symbol, env) {
       }
     });
     const data = await res.json();
-    const closes = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close;
+    const closes = data?.chart?.result?.[0]?.indicators?.adjclose?.[0]?.adjclose;
     const lastClose = [...closes].reverse().find(v => typeof v === 'number');
 
     if (typeof lastClose !== 'number') throw new Error('No valid closing price');
@@ -108,7 +108,7 @@ async function getRSI(symbol, interval, env) {
     });
 
     const data = await res.json();
-    const closes = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close;
+    const closes = data?.chart?.result?.[0]?.indicators?.adjclose?.[0]?.adjclose;
 
     if (!Array.isArray(closes) || closes.length < 15) {
       console.log(`Yahoo RSI warning: not enough data for ${symbol} ${interval}`);
