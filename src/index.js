@@ -13,6 +13,8 @@ const TTL = {
 
 const now = () => Date.now();
 const isExpired = (ts, ttl) => !ts || now() - ts > ttl;
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 
 /* =======================
    FETCH PRIX (Yahoo Finance)
@@ -22,6 +24,8 @@ async function getPrice(symbol, env) {
   const cacheKey = `PRICE_${symbol}`;
   const cached = await env.ASSET_CACHE.get(cacheKey, 'json');
   if (cached && !isExpired(cached.ts, TTL.PRICE)) return cached.value;
+
+  await sleep(1500); // pause de 1,5 seconde avant chaque requête
 
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5y&interval=1d`;
 
@@ -35,8 +39,8 @@ async function getPrice(symbol, env) {
     });
     const data = await res.json();
     const closes = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close;
-
     const lastClose = [...closes].reverse().find(v => typeof v === 'number');
+
     if (typeof lastClose !== 'number') throw new Error('No valid closing price');
 
     await env.ASSET_CACHE.put(
@@ -85,11 +89,11 @@ function calculateRSI(closes, period = 14) {
 async function getRSI(symbol, interval, env) {
   const cacheKey = `RSI_${interval}_${symbol}`;
   const ttl = interval === 'weekly' ? TTL.RSI_WEEKLY : TTL.RSI_MONTHLY;
-
   const cached = await env.ASSET_CACHE.get(cacheKey, 'json');
   if (cached && !isExpired(cached.ts, ttl)) return cached;
 
-  // fetch historical closes from Yahoo
+  await sleep(1500); // pause 1,5 seconde avant chaque requête
+
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5y&interval=${interval === 'weekly' ? '1wk' : '1mo'}`;
   try {
     const res = await fetch(url, {
@@ -101,10 +105,9 @@ async function getRSI(symbol, interval, env) {
     });
     const data = await res.json();
     const closes = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close;
-
     const rsiValue = calculateRSI(closes, 14);
 
-    const result = { current: rsiValue, previous: null, ts: now() }; // Previous RSI could be calculated if desired
+    const result = { current: rsiValue, previous: null, ts: now() };
     await env.ASSET_CACHE.put(cacheKey, JSON.stringify(result));
     return result;
 
