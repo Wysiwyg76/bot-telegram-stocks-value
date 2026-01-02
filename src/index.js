@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { assetLabels } from './assets.js';
 
 const RATE_LIMIT_DELAY = 13000;
