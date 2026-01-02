@@ -25,7 +25,7 @@ async function getPrice(symbol, env) {
   const cached = await env.ASSET_CACHE.get(cacheKey, 'json');
   if (cached && !isExpired(cached.ts, TTL.PRICE)) return cached.value;
 
-  await sleep(1500); // pause de 1,5 secondes avant chaque requête
+  await sleep(1500); // pause pour ne pas spammer Yahoo
 
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=14d&interval=1d`;
 
@@ -94,7 +94,7 @@ async function getRSI(symbol, interval, env) {
   const cached = await env.ASSET_CACHE.get(cacheKey, 'json');
   if (cached && !isExpired(cached.ts, ttl)) return cached;
 
-  await sleep(1000); // pause pour ne pas spammer Yahoo
+  await sleep(1500); // pause pour ne pas spammer Yahoo
 
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5y&interval=${interval === 'weekly' ? '1wk' : '1mo'}`;
 
@@ -141,14 +141,16 @@ async function getRSI(symbol, interval, env) {
 ======================= */
 
 const arrow = (c, p) =>
-  typeof c === 'number' && typeof p === 'number'
-    ? c > p ? '⬈' : c < p ? '⬊' : '➞' : '➞';
+  typeof c === 'number' && typeof p === 'number' ? c > p*1.01 ? '⬈' : c < p*0.99 ? '⬊' : '➞' : '➞';
 
 const safe = v => typeof v === 'number' ? v.toFixed(1) : 'N/A';
 
-function assetMessage(label, w, m, price) {
+function assetMessage(asset, w, m, price) {
+
+  const currency = asset.currency || '?';
+
   return (
-    `*${label}*\n` +
+    `*${asset.name}*\n` +
     `  • Prix clôture : *\`${safe(price)} ${currency}*\`\n` +
     `  • RSI hebdo : *\`${safe(w?.current)}\` ${arrow(w?.current, w?.previous)}*\n` +
     `  • RSI mensuel : *\`${safe(m?.current)}\` ${arrow(m?.current, m?.previous)}*\n\n`
@@ -231,7 +233,7 @@ export default {
       return new Response('OK');
     }
 
-    const symbol = Object.keys(assetLabels).find(k => assetLabels[k] === text);
+    const symbol = Object.keys(assetLabels).find(k => assetLabels[k].name === text);
     if (!symbol) return new Response('OK');
 
     const date = new Date().toLocaleDateString('fr-FR');
