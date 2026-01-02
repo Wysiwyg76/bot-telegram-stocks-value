@@ -27,7 +27,7 @@ async function getPrice(symbol, env) {
 
   await sleep(1500); // pause pour ne pas spammer Yahoo
 
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=14d&interval=1d`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5d&interval=1d`;
 
   try {
     const res = await fetch(url, {
@@ -96,7 +96,7 @@ async function getRSI(symbol, interval, env) {
 
   await sleep(1500); // pause pour ne pas spammer Yahoo
 
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5y&interval=${interval === 'weekly' ? '1wk' : '1mo'}`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=${interval === 'weekly' ? '6mo' : '2y'}&interval=${interval === 'weekly' ? '1wk' : '1mo'}`;
 
   try {
     const res = await fetch(url, {
