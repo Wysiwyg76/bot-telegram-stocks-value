@@ -5,37 +5,81 @@ import { assetLabels } from './assets.js';
    CONSTANTES & UTILS
 ======================= */
 
-const RATE_LIMIT_DELAY = 13000;
-
 const TTL = {
   PRICE: 24 * 60 * 60 * 1000,
   RSI_WEEKLY: 7 * 24 * 60 * 60 * 1000,
   RSI_MONTHLY: 30 * 24 * 60 * 60 * 1000
 };
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 const now = () => Date.now();
 const isExpired = (ts, ttl) => !ts || now() - ts > ttl;
 
 /* =======================
-   ALPHA VANTAGE
+   FETCH PRIX (Yahoo Finance)
 ======================= */
 
-async function alphaFetch(url) {
-  await sleep(RATE_LIMIT_DELAY);
+async function getPrice(symbol, env) {
+  const cacheKey = `PRICE_${symbol}`;
+  const cached = await env.ASSET_CACHE.get(cacheKey, 'json');
+  if (cached && !isExpired(cached.ts, TTL.PRICE)) return cached.value;
 
-  const res = await fetch(url);
-  const data = await res.json();
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5y&interval=1d`;
 
-  if (data?.Note || data?.Information || data?.message) {
-    throw new Error('AlphaVantage quota exceeded');
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/json",
+        "Referer": "https://finance.yahoo.com/"
+      }
+    });
+    const data = await res.json();
+    const closes = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close;
+
+    const lastClose = [...closes].reverse().find(v => typeof v === 'number');
+    if (typeof lastClose !== 'number') throw new Error('No valid closing price');
+
+    await env.ASSET_CACHE.put(
+      cacheKey,
+      JSON.stringify({ value: lastClose, ts: now() })
+    );
+    return lastClose;
+
+  } catch (e) {
+    console.log(`Yahoo price error ${symbol}`, e.message);
+    return cached?.value ?? null;
   }
-
-  return data;
 }
 
 /* =======================
-   DATA FETCHERS (CACHED)
+   RSI CALCULATOR
+======================= */
+
+function calculateRSI(closes, period = 14) {
+  if (!closes || closes.length < period + 1) return null;
+
+  let gains = 0, losses = 0;
+  for (let i = 1; i <= period; i++) {
+    const diff = closes[i] - closes[i - 1];
+    if (diff > 0) gains += diff;
+    else losses -= diff;
+  }
+
+  let avgGain = gains / period;
+  let avgLoss = losses / period;
+
+  for (let i = period + 1; i < closes.length; i++) {
+    const diff = closes[i] - closes[i - 1];
+    avgGain = (avgGain * (period - 1) + Math.max(diff, 0)) / period;
+    avgLoss = (avgLoss * (period - 1) + Math.max(-diff, 0)) / period;
+  }
+
+  const rs = avgGain / avgLoss;
+  return 100 - 100 / (1 + rs);
+}
+
+/* =======================
+   GET RSI (Hebdo / Mensuel)
 ======================= */
 
 async function getRSI(symbol, interval, env) {
@@ -45,80 +89,28 @@ async function getRSI(symbol, interval, env) {
   const cached = await env.ASSET_CACHE.get(cacheKey, 'json');
   if (cached && !isExpired(cached.ts, ttl)) return cached;
 
-  const url =
-    `https://www.alphavantage.co/query?function=RSI` +
-    `&symbol=${symbol}&interval=${interval}` +
-    `&time_period=14&series_type=close` +
-    `&apikey=${env.ALPHA_VANTAGE_API_KEY}`;
-
-  try {
-    const data = await alphaFetch(url);
-    const rsi = data['Technical Analysis: RSI'];
-    const keys = Object.keys(rsi);
-
-    const result = {
-      current: parseFloat(rsi[keys[0]].RSI),
-      previous: parseFloat(rsi[keys[1]].RSI),
-      ts: now()
-    };
-
-    await env.ASSET_CACHE.put(cacheKey, JSON.stringify(result));
-    return result;
-
-  } catch (e) {
-    console.log(`RSI error ${symbol} ${interval}`, e.message);
-    return cached ?? null;
-  }
-}
-
-async function getPrice(symbol, env) {
-  const cacheKey = `PRICE_${symbol}`;
-  const cached = await env.ASSET_CACHE.get(cacheKey, 'json');
-
-  if (cached && !isExpired(cached.ts, TTL.PRICE)) {
-    return cached.value;
-  }
-
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5d&interval=1d`;
-
+  // fetch historical closes from Yahoo
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5y&interval=${interval === 'weekly' ? '1wk' : '1mo'}`;
   try {
     const res = await fetch(url, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-          "AppleWebKit/537.36 (KHTML, like Gecko) " +
-          "Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0",
         "Accept": "application/json",
         "Referer": "https://finance.yahoo.com/"
       }
     });
-
     const data = await res.json();
+    const closes = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close;
 
-    const result = data?.chart?.result?.[0];
-    const closes = result?.indicators?.quote?.[0]?.close;
+    const rsiValue = calculateRSI(closes, 14);
 
-    if (!Array.isArray(closes)) {
-      throw new Error('Invalid Yahoo Finance response');
-    }
-
-    // On prend la DERNIÈRE clôture non null
-    const lastClose = [...closes].reverse().find(v => typeof v === 'number');
-
-    if (typeof lastClose !== 'number') {
-      throw new Error('No valid closing price');
-    }
-
-    await env.ASSET_CACHE.put(
-      cacheKey,
-      JSON.stringify({ value: lastClose, ts: now() })
-    );
-
-    return lastClose;
+    const result = { current: rsiValue, previous: null, ts: now() }; // Previous RSI could be calculated if desired
+    await env.ASSET_CACHE.put(cacheKey, JSON.stringify(result));
+    return result;
 
   } catch (e) {
-    console.log(`Yahoo price error ${symbol}`, e.message);
-    return cached?.value ?? null;
+    console.log(`Yahoo RSI error ${symbol} ${interval}`, e.message);
+    return cached ?? null;
   }
 }
 
@@ -150,16 +142,12 @@ async function sendTelegram(chatId, text, env) {
   await fetch(`https://api.telegram.org/bot${env.TELEGRAM_API_KEY}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      parse_mode: 'Markdown'
-    })
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' })
   });
 }
 
 /* =======================
-   MESSAGE BUILDERS
+   BUILD MESSAGE
 ======================= */
 
 async function buildAllAssetsMessage(env) {
@@ -182,6 +170,13 @@ async function buildAllAssetsMessage(env) {
 
 export default {
   async fetch(req, env) {
+    const url = new URL(req.url);
+
+    // Ignore favicon / robots.txt
+    if (url.pathname === '/favicon.ico' || url.pathname === '/robots.txt') {
+      return new Response('Not Found', { status: 404 });
+    }
+
     if (req.method !== 'POST') return new Response('OK');
 
     const update = await req.json();
@@ -190,16 +185,12 @@ export default {
 
     if (!chatId || !text) return new Response('OK');
 
-    const allowed = env.ALLOWED_CHAT_IDS
-      .split(',')
-      .map(id => parseInt(id.trim(), 10));
-
+    const allowed = env.ALLOWED_CHAT_IDS.split(',').map(id => parseInt(id.trim(), 10));
     if (!allowed.includes(chatId)) {
       console.log('Unauthorized chat:', chatId);
       return new Response('Unauthorized', { status: 403 });
     }
 
-    /* /start */
     if (text === '/start') {
       const keyboard = Object.values(assetLabels).map(l => [l]);
       keyboard.push(['Tous les actifs']);
@@ -208,23 +199,17 @@ export default {
       await fetch(`https://api.telegram.org/bot${env.TELEGRAM_API_KEY}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: 'Menu',
-          reply_markup: { keyboard, resize_keyboard: true }
-        })
+        body: JSON.stringify({ chat_id: chatId, text: 'Menu', reply_markup: { keyboard, resize_keyboard: true } })
       });
       return new Response('OK');
     }
 
-    /* Tous les actifs */
     if (text === 'Tous les actifs') {
       const msg = await buildAllAssetsMessage(env);
       await sendTelegram(chatId, msg, env);
       return new Response('OK');
     }
 
-    /* Actif unique */
     const symbol = Object.keys(assetLabels).find(k => assetLabels[k] === text);
     if (!symbol) return new Response('OK');
 
