@@ -79,24 +79,35 @@ async function getPrice(symbol, env) {
     return cached.value;
   }
 
-  const url =
-    `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY` +
-    `&symbol=${symbol}&apikey=${env.ALPHA_VANTAGE_API_KEY}`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5d&interval=1d`;
 
   try {
-    const data = await alphaFetch(url);
-    const series = data['Time Series (Daily)'];
-    const price = parseFloat(series[Object.keys(series)[0]]['4. close']);
+    const res = await fetch(url);
+    const data = await res.json();
+
+    const result = data?.chart?.result?.[0];
+    const closes = result?.indicators?.quote?.[0]?.close;
+
+    if (!Array.isArray(closes)) {
+      throw new Error('Invalid Yahoo Finance response');
+    }
+
+    // On prend la DERNIÈRE clôture non null
+    const lastClose = [...closes].reverse().find(v => typeof v === 'number');
+
+    if (typeof lastClose !== 'number') {
+      throw new Error('No valid closing price');
+    }
 
     await env.ASSET_CACHE.put(
       cacheKey,
-      JSON.stringify({ value: price, ts: now() })
+      JSON.stringify({ value: lastClose, ts: now() })
     );
 
-    return price;
+    return lastClose;
 
   } catch (e) {
-    console.log(`Price error ${symbol}`, e.message);
+    console.log(`Yahoo price error ${symbol}`, e.message);
     return cached?.value ?? null;
   }
 }
