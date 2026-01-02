@@ -59,7 +59,7 @@ async function buildAllAssetsMessage(env) {
     const w = '';//await getRSI(s, 'weekly', env);
     const m = '';//await getRSI(s, 'monthly', env);
     const p = '';//await getPrice(s, env);
-    msg += assetMessage(assetLabels[s], w, m, p);
+    //msg += assetMessage(assetLabels[s], w, m, p);
   }
   return msg;
 }
@@ -117,7 +117,7 @@ export default {
     const m = '';//await getRSI(symbol, 'monthly', env);
     const p = '';//await getPrice(symbol, env);
 
-    msg += assetMessage(assetLabels[symbol], w, m, p);
+    //msg += assetMessage(assetLabels[symbol], w, m, p);
     await sendTelegram(chatId, msg, env);
 
     return new Response('OK');
