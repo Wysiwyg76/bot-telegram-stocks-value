@@ -79,7 +79,7 @@ async function buildAllAssetsMessage(env) {
   for (const s of Object.keys(assetLabels)) {
     const w = '';//await getRSI(s, 'weekly', env);
     const m = '';//await getRSI(s, 'monthly', env);
-    const p = '';//await getPrice(s, env);
+    const p = await getPrice(s, env);
     msg += assetMessage(assetLabels[s], w, m, p);
   }
   return msg;
