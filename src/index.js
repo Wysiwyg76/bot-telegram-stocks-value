@@ -103,6 +103,7 @@ export default {
     }
 
     console.log("Received Telegram update:", update);
+    console.log(env.ALLOWED_CHAT_IDS);
 
     if (!chatId || !text) return new Response('OK');
 
