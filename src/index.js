@@ -72,6 +72,8 @@ export default {
     const chatId = update.message?.chat?.id;
     const text = update.message?.text;
 
+    console.log("Received Telegram update:", update);
+
     if (!chatId || !text) return new Response('OK');
 
     if (text === '/start') {
