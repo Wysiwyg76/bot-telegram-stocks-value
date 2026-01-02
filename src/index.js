@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import { assetLabels } from './assets.js';
 
-const RATE_LIMIT_DELAY = 13000; // 13 secondes pour AlphaVantage
+const RATE_LIMIT_DELAY = 20000; // 13 secondes pour AlphaVantage
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /**
