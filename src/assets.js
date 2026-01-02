@@ -6,6 +6,6 @@ export const assetLabels = {
   'LQQ.PA': 'ETF Nasdaq x2',
   'WPEA.PA': 'ETF World',
   '4BRZ.PA': 'ETF Brésil',
-  'PPFD.DE': 'ETF Gold',
+  'PPFB.DE': 'ETF Gold',
   'FCO2.DE': 'ETF Carbone'
 };
