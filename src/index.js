@@ -149,10 +149,10 @@ const safe = v => typeof v === 'number' ? v.toFixed(2) : 'N/A';
 
 function assetMessage(label, w, m, price) {
   return (
-    `*📊 ${label}*\n` +
-    `• *RSI Hebdo* : \`${safe(w?.current)}\` ${arrow(w?.current, w?.previous)}\n` +
-    `• *RSI Mensuel* : \`${safe(m?.current)}\` ${arrow(m?.current, m?.previous)}\n` +
-    `• *Prix* : \`${safe(price)} €\`\n\n`
+    `**${label}**\n` +
+    `• *RSI hebdomadaire* : \`${safe(w?.current)}\` ${arrow(w?.current, w?.previous)}\n` +
+    `• *RSI mensuel* : \`${safe(m?.current)}\` ${arrow(m?.current, m?.previous)}\n` +
+    `• *Prix dernière clôture* : \`${safe(price)} €\`\n\n`
   );
 }
 
