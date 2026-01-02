@@ -25,9 +25,9 @@ async function getPrice(symbol, env) {
   const cached = await env.ASSET_CACHE.get(cacheKey, 'json');
   if (cached && !isExpired(cached.ts, TTL.PRICE)) return cached.value;
 
-  await sleep(2000); // pause de 2 secondes avant chaque requête
+  await sleep(2500); // pause de 2,5 secondes avant chaque requête
 
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5y&interval=1d`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=14d&interval=1d`;
 
   try {
     const res = await fetch(url, {
@@ -92,9 +92,9 @@ async function getRSI(symbol, interval, env) {
   const cached = await env.ASSET_CACHE.get(cacheKey, 'json');
   if (cached && !isExpired(cached.ts, ttl)) return cached;
 
-  await sleep(2000); // pause 2 secondes avant chaque requête
+  await sleep(2500); // pause 2,5 secondes avant chaque requête
 
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5y&interval=${interval === 'weekly' ? '1wk' : '1mo'}`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=3y&interval=${interval === 'weekly' ? '1wk' : '1mo'}`;
   try {
     const res = await fetch(url, {
       headers: {
