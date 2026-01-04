@@ -167,7 +167,7 @@ function assetRow(asset, w, m, price, symbol) {
 }
 
 function assetsTable(assetsRows) {
-  if (!items.length) return '(vide)';
+  if (!assetsRows.length) return '(vide)';
   
   const header =
     pad('Actif', 17) + ' | ' +
@@ -191,7 +191,7 @@ function assetsTable(assetsRows) {
     '```\n' +
     header + '\n' +
     separator + '\n' +
-    assetsRows.join('\n') +
+    rows.join('\n') +
     '\n```'
   );
 }
