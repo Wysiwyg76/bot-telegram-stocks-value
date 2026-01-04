@@ -223,18 +223,32 @@ async function sendTelegram(chatId, text, env) {
    BUILD MESSAGE
 ======================= */
 async function buildAssetsMessageForSubset(env, subset) {
-  const date = new Date().toLocaleDateString('fr-FR');
-  const rows = [];
+  const items = [];
 
   for (const s of subset) {
     const w = await getRSI(s, 'weekly', env);
     const m = await getRSI(s, 'monthly', env);
     const p = await getPrice(s, env);
 
-    rows.push(assetRow(assetLabels[s], w, m, p));
+    items.push({
+      symbol: s,
+      asset: assetLabels[s],
+      w,
+      m,
+      price: p
+    });
   }
 
-  return `*📅 ${date}*\n\n` + assetsMessage(rows);
+  return items;
+}
+
+function buildFinalMessage(items) {
+  const date = new Date().toLocaleDateString('fr-FR');
+  let msg = `*📅 ${date}*\n\n`;
+
+  msg += assetsMessage(items);
+
+  return msg;
 }
 
 
@@ -268,17 +282,18 @@ export default {
       return new Response('OK');
     }
 
+    var items = [];
     if(text==='Tous les actifs'){
-      const msg = await buildAssetsMessageForSubset(env,Object.keys(assetLabels));
-      await sendTelegram(chatId,msg,env);
-      return new Response('OK');
+      items = await buildAssetsMessageForSubset(env, Object.keys(assetLabels));
+    } else {
+      const symbol = Object.keys(assetLabels).find(k=>assetLabels[k].name===text);
+      if(!symbol) return new Response('OK');
+      items = await buildAssetsMessageForSubset(env, [symbol]);
     }
 
-    const symbol = Object.keys(assetLabels).find(k=>assetLabels[k].name===text);
-    if(!symbol) return new Response('OK');
-
-    const msg = await buildAssetsMessageForSubset(env,[symbol]);
+    const msg = buildFinalMessage(items);
     await sendTelegram(chatId,msg,env);
+
     return new Response('OK');
   },
 
@@ -289,7 +304,8 @@ async scheduled(_,env){
 
     // Chat1 à chaque fois
     const CHAT1_ASSETS = ['ESE.PA','VERX.AS','PAASI.PA','DBXJ.DE','4BRZ.DE','PPFB.DE','BTC-USD'];
-    const msg1 = await buildAssetsMessageForSubset(env,CHAT1_ASSETS);
+    const items1 = await buildAssetsMessageForSubset(env, CHAT1_ASSETS);
+    const msg1 = buildFinalMessage(items1);
     await sendTelegram(env.TELEGRAM_CHAT_ID1,msg1,env);
 
     // Chat2 uniquement le 2ème mardi du mois
@@ -299,8 +315,9 @@ async scheduled(_,env){
 
     if(dayOfMonth===secondTuesday){
       const CHAT2_ASSETS = ['WPEA.PA'];
-      //const msg2 = await buildAssetsMessageForSubset(env,CHAT2_ASSETS);
-      //await sendTelegram(env.TELEGRAM_CHAT_ID2,msg2,env);
+      //const items2 = await buildAssetsMessageForSubset(env, CHAT2_ASSETS);
+      //const msg2 = buildFinalMessage(items1);
+      //await sendTelegram(env.TELEGRAM_CHAT_ID1,msg2,env);
     }
   }
 
