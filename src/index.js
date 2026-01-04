@@ -180,7 +180,8 @@ function assetsTable(assetsRows) {
 
   const rows = assetsRows.map(i => {
     const asset = i.asset;
-    const symbol = i;
+    const symbol = safe(i.symbol);
+    const price = safe(i.price);
     const w = safe(i.w?.current);
     const m = safe(i.m?.current);
 
@@ -209,8 +210,8 @@ function assetSingleMessage(asset, w, m, price, symbol) {
 
 function assetsMessage(items) {
   if (items.length === 1) {
-    const { asset, w, m, price } = items[0];
-    return assetSingleMessage(asset, w, m, price);
+    const { symbol, asset, w, m, price } = items[0];
+    return assetSingleMessage(asset, w, m, price, symbol);
   }
 
   return assetsTable(items);
