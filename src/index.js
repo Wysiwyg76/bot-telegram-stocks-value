@@ -156,7 +156,7 @@ const pad = (str, len) => String(str ?? '').padEnd(len, ' ').slice(0, len);
 const padRight = (str, len) => String(str ?? '').padStart(len, ' ').slice(-len);
 
 
-function assetRow(asset, w, m, price) {
+function assetRow(asset, w, m, price, symbol) {
   const currency = asset.currency || '';
   return [
     pad(asset.name, 17),
@@ -167,6 +167,8 @@ function assetRow(asset, w, m, price) {
 }
 
 function assetsTable(assetsRows) {
+  if (!items.length) return '(vide)';
+  
   const header =
     pad('Actif', 17) + ' | ' +
     pad('Prix', 10) + ' | ' +
@@ -176,24 +178,32 @@ function assetsTable(assetsRows) {
   const separator =
     '------------------|------------|---------|--------';
 
+  const rows = assetsRows.map(i => {
+    const asset = i.asset;
+    const symbol = i;
+    const w = safe(i.w?.current);
+    const m = safe(i.m?.current);
+
+    return assetRow(asset, w, m, price, symbol);
+  });
+
   return (
     '```\n' +
     header + '\n' +
     separator + '\n' +
     assetsRows.join('\n') +
-    separator + '\n' +
     '\n```'
   );
 }
 
-function assetSingleMessage(asset, w, m, price) {
+function assetSingleMessage(asset, w, m, price, symbol) {
   const currency = asset.currency || '?';
 
   return (
     `*${asset.name}*\n` +
-    `Prix : *${safe(price)} ${currency}*\n` +
-    `RSI hebdo : *${safe(w?.current)}* ${arrow(w?.current, w?.previous)}\n` +
-    `RSI mensuel : *${safe(m?.current)}* ${arrow(m?.current, m?.previous)}`
+    `• Prix : *${safe(price)} ${currency}*\n` +
+    `• RSI hebdo : *${safe(w?.current)}* ${arrow(w?.current, w?.previous)}\n` +
+    `• RSI mensuel : *${safe(m?.current)}* ${arrow(m?.current, m?.previous)}`
   );
 }
 
