@@ -182,6 +182,7 @@ function assetsTable(assetsRows) {
     header + '\n' +
     separator + '\n' +
     assetsRows.join('\n') +
+    separator + '\n' +
     '\n```'
   );
 }
