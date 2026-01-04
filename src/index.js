@@ -158,8 +158,8 @@ const padRight = (str, len) => String(str ?? '').padStart(len, ' ').slice(-len);
 function rsiLabel(rsi) {
   if (typeof rsi !== 'number') return '—';
   if (rsi >= 70) return '🔥 surachat';
-  if (rsi >= 60) return '📈 haussier';
-  if (rsi >= 40) return '➖ neutre';
+  if (rsi >= 55) return '📈 haussier';
+  if (rsi >= 45) return '➖ neutre';
   if (rsi >= 30) return '📉 baissier';
   return '❄️ survente';
 }
