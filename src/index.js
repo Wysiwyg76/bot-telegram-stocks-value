@@ -205,8 +205,8 @@ function assetSingleMessage(asset, w, m, price, symbol) {
   return (
     `*${asset.name}*\n` +
     `• Prix : *${safe(price)} ${currency}*\n` +
-    `• Hebdomadaire : *`+rsiLabel(${safe(w?.current)})+`*\n` +
-    `• Mensuel : *`+rsiLabel(${safe(w?.current)})+`*`
+    `• Hebdomadaire : *${rsiLabel(safe(w?.current))}* (${safe(m?.current)})\n` +
+    `• Mensuel : *${rsiLabel(safe(w?.current))}* (${safe(m?.current)})`
   );
 }
 
