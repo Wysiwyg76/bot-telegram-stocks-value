@@ -147,11 +147,41 @@ async function getRSI(symbol, interval, env) {
    FORMATAGE MESSAGE
 ======================= */
 
-const arrow = (c, p) =>
-  typeof c === 'number' && typeof p === 'number' ? c > p*1.01 ? '⬈' : c < p*0.99 ? '⬊' : '➞' : '➞';
+const arrow = (c, p) => typeof c === 'number' && typeof p === 'number' ? c > p*1.01 ? '⬈' : c < p*0.99 ? '⬊' : '➞' : '➞';
 
 const safe = v => typeof v === 'number' ? v.toFixed(1) : 'N/A';
 
+const pad = (str, len) => String(str ?? '').padEnd(len, ' ').slice(0, len);
+
+function assetRow(asset, w, m, price) {
+  const currency = asset.currency || '';
+  return [
+    pad(asset.name, 12),
+    pad(`${safe(price)} ${currency}`, 10),
+    pad(`${safe(w?.current)} ${arrow(w?.current, w?.previous)}`, 7),
+    pad(`${safe(m?.current)} ${arrow(m?.current, m?.previous)}`, 7)
+  ].join(' | ');
+}
+
+function assetsTable(assetsRows) {
+  const header =
+    pad('Actif', 12) + ' | ' +
+    pad('Prix', 10) + ' | ' +
+    pad('RSI W', 7) + ' | ' +
+    pad('RSI M', 7);
+
+  const separator =
+    '-------------|------------|---------|--------';
+
+  return (
+    '```\n' +
+    header + '\n' +
+    separator + '\n' +
+    assetsRows.join('\n') +
+    '\n```'
+  );
+}
+/*
 function assetMessage(asset, w, m, price) {
 
   const currency = asset.currency || '?';
@@ -163,6 +193,8 @@ function assetMessage(asset, w, m, price) {
     `  • RSI mensuel : *${safe(m?.current)} ${arrow(m?.current, m?.previous)}*\n\n`
   );
 }
+*/
+
 
 /* =======================
    TELEGRAM
@@ -179,18 +211,21 @@ async function sendTelegram(chatId, text, env) {
 /* =======================
    BUILD MESSAGE
 ======================= */
-
-async function buildAssetsMessageForSubset(env, subset){
+async function buildAssetsMessageForSubset(env, subset) {
   const date = new Date().toLocaleDateString('fr-FR');
-  let msg = `*📅 ${date}*\n\n`;
-  for(const s of subset){
-    const w = await getRSI(s,'weekly',env);
-    const m = await getRSI(s,'monthly',env);
-    const p = await getPrice(s,env);
-    msg += assetMessage(assetLabels[s],w,m,p);
+  const rows = [];
+
+  for (const s of subset) {
+    const w = await getRSI(s, 'weekly', env);
+    const m = await getRSI(s, 'monthly', env);
+    const p = await getPrice(s, env);
+
+    rows.push(assetRow(assetLabels[s], w, m, p));
   }
-  return msg;
+
+  return `*📅 ${date}*\n\n` + assetsTable(rows);
 }
+
 
 /* =======================
    WORKER
@@ -200,8 +235,6 @@ export default {
   async fetch(req,env){
     const url = new URL(req.url);
 
-    // Ignore favicon / robots.txt
-    if(url.pathname==='/favicon.ico' || url.pathname==='/robots.txt') return new Response('Not Found',{status:404});
     if(req.method!=='POST') return new Response('OK');
 
     const update = await req.json();
@@ -209,11 +242,8 @@ export default {
     const text = update.message?.text;
     if(!chatId || !text) return new Response('OK');
 
-    const allowed = env.ALLOWED_CHAT_IDS.split(',').map(id=>parseInt(id.trim(),10));
-    if(!allowed.includes(chatId)){
-      console.log('Unauthorized chat:',chatId);
-      return new Response('Unauthorized',{status:403});
-    }
+    const allowed = env.ALLOWED_CHAT_IDS.split(',').map(id => parseInt(id.trim(), 10));
+    if (!allowed.includes(chatId)) return new Response("Unauthorized", { status: 403 });
 
     if(text==='/start'){
       const keyboard = Object.values(assetLabels).map(l=>[l.name]);
