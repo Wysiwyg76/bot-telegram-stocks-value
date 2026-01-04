@@ -166,7 +166,6 @@ function assetRow(asset, w, m, price) {
   ].join(' | ');
 }
 
-
 function assetsTable(assetsRows) {
   const header =
     pad('Actif', 17) + ' | ' +
@@ -185,6 +184,26 @@ function assetsTable(assetsRows) {
     separator + '\n' +
     '\n```'
   );
+}
+
+function assetSingleMessage(asset, w, m, price) {
+  const currency = asset.currency || '?';
+
+  return (
+    `*${asset.name}*\n` +
+    `Prix : *${safe(price)} ${currency}*\n` +
+    `RSI hebdo : *${safe(w?.current)}* ${arrow(w?.current, w?.previous)}\n` +
+    `RSI mensuel : *${safe(m?.current)}* ${arrow(m?.current, m?.previous)}`
+  );
+}
+
+function assetsMessage(items) {
+  if (items.length === 1) {
+    const { asset, w, m, price } = items[0];
+    return assetSingleMessage(asset, w, m, price);
+  }
+
+  return assetsTable(items);
 }
 
 
@@ -215,7 +234,7 @@ async function buildAssetsMessageForSubset(env, subset) {
     rows.push(assetRow(assetLabels[s], w, m, p));
   }
 
-  return `*📅 ${date}*\n\n` + assetsTable(rows);
+  return `*📅 ${date}*\n\n` + assetsMessage(rows);
 }
 
 
