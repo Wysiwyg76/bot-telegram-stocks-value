@@ -168,7 +168,7 @@ function assetRow(asset, w, m, price, symbol) {
   const currency = asset.currency || '';
   return [
     pad(asset.name, 11),
-    pad(symbol, 8),
+    pad(symbol, 7),
     padRight(`${safe(price)} ${currency}`, 10),
     pad(`${safe(w?.current)} ${arrow(w?.current, w?.previous)}`, 7),
     pad(`${safe(m?.current)} ${arrow(m?.current, m?.previous)}`, 7)
@@ -180,13 +180,13 @@ function assetsTable(assetsRows) {
   
   const header =
     pad('Actif', 11) + ' | ' +
-    pad('Symbol', 8) + ' | ' +
+    pad('Symbol', 7) + ' | ' +
     pad('Prix', 10) + ' | ' +
     pad('RSI W', 7) + ' | ' +
     pad('RSI M', 7);
 
   const separator =
-    '------------|----------|------------|---------|--------';
+    '------------|---------|------------|---------|--------';
 
   const rows = assetsRows.map(i => {
     return assetRow(i.asset, i.w, i.m, i.price, i.symbol);
