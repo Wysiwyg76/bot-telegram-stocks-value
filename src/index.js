@@ -157,11 +157,11 @@ const padRight = (str, len) => String(str ?? '').padStart(len, ' ').slice(-len);
 
 function rsiLabel(rsi) {
   if (typeof rsi !== 'number') return '—';
-  if (rsi >= 70) return '🔥 Surachat';
-  if (rsi >= 60) return '📈 Haussier';
-  if (rsi >= 40) return '➖ Neutre';
-  if (rsi >= 30) return '📉 Baissier';
-  return '❄️ Survente';
+  if (rsi >= 70) return '🔥 surachat';
+  if (rsi >= 60) return '📈 haussier';
+  if (rsi >= 40) return '➖ neutre';
+  if (rsi >= 30) return '📉 baissier';
+  return '❄️ survente';
 }
 
 function assetRow(asset, w, m, price, symbol) {
@@ -205,7 +205,7 @@ function assetSingleMessage(asset, w, m, price, symbol) {
   return (
     `*${asset.name}*\n` +
     `• Prix : *${safe(price)} ${currency}*\n` +
-    `• Hebdomadaire : *${rsiLabel(w?.current)}* (${safe(w?.current)})\n` +
+    `• Hebdo : *${rsiLabel(w?.current)}* (${safe(w?.current)})\n` +
     `• Mensuel : *${rsiLabel(m?.current)}* (${safe(m?.current)})`
   );
 }
