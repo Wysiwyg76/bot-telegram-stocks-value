@@ -153,19 +153,23 @@ const safe = v => typeof v === 'number' ? v.toFixed(1) : 'N/A';
 
 const pad = (str, len) => String(str ?? '').padEnd(len, ' ').slice(0, len);
 
+const padRight = (str, len) => String(str ?? '').padStart(len, ' ').slice(-len);
+
+
 function assetRow(asset, w, m, price) {
   const currency = asset.currency || '';
   return [
-    pad(asset.name, 12),
-    pad(`${safe(price)} ${currency}`, 10),
+    pad(asset.name, 17),
+    padRight(`${safe(price)} ${currency}`, 10),
     pad(`${safe(w?.current)} ${arrow(w?.current, w?.previous)}`, 7),
     pad(`${safe(m?.current)} ${arrow(m?.current, m?.previous)}`, 7)
   ].join(' | ');
 }
 
+
 function assetsTable(assetsRows) {
   const header =
-    pad('Actif', 12) + ' | ' +
+    pad('Actif', 17) + ' | ' +
     pad('Prix', 10) + ' | ' +
     pad('RSI W', 7) + ' | ' +
     pad('RSI M', 7);
@@ -181,19 +185,6 @@ function assetsTable(assetsRows) {
     '\n```'
   );
 }
-/*
-function assetMessage(asset, w, m, price) {
-
-  const currency = asset.currency || '?';
-
-  return (
-    `*${asset.name}*\n` +
-    `  • Prix clôture : *${safe(price)} ${currency}*\n` +
-    `  • RSI hebdo : *${safe(w?.current)} ${arrow(w?.current, w?.previous)}*\n` +
-    `  • RSI mensuel : *${safe(m?.current)} ${arrow(m?.current, m?.previous)}*\n\n`
-  );
-}
-*/
 
 
 /* =======================
