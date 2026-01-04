@@ -179,13 +179,7 @@ function assetsTable(assetsRows) {
     '------------------|------------|---------|--------';
 
   const rows = assetsRows.map(i => {
-    const asset = i.asset;
-    const symbol = safe(i.symbol);
-    const price = safe(i.price);
-    const w = safe(i.w?.current);
-    const m = safe(i.m?.current);
-
-    return assetRow(asset, w, m, price, symbol);
+    return assetRow(i.asset, i.w, i.m, i.price, i.symbol);
   });
 
   return (
