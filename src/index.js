@@ -149,6 +149,7 @@ async function getRSI(symbol, interval, env) {
 
 const arrow = (c, p) => typeof c === 'number' && typeof p === 'number' ? c > p*1.02 ? '⬈' : c < p*0.98 ? '⬊' : '➞' : '➞';
 
+const safe0 = v => typeof v === 'number' ? v.toFixed(0) : 'N/A';
 const safe = v => typeof v === 'number' ? v.toFixed(1) : 'N/A';
 
 const pad = (str, len) => String(str ?? '').padEnd(len, ' ').slice(0, len);
@@ -170,8 +171,8 @@ function assetRow(asset, w, m, price, symbol) {
     pad(asset.name, 10),
     pad(symbol, 7),
     padRight(`${safe(price)} ${currency}`, 10),
-    pad(`${safe(w?.current)} ${arrow(w?.current, w?.previous)}`, 6),
-    pad(`${safe(m?.current)} ${arrow(m?.current, m?.previous)}`, 6)
+    pad(`${safe0(w?.current)} ${arrow(w?.current, w?.previous)}`, 6),
+    pad(`${safe0(m?.current)} ${arrow(m?.current, m?.previous)}`, 6)
   ].join(' | ');
 }
 
@@ -207,8 +208,8 @@ function assetSingleMessage(asset, w, m, price, symbol) {
   return (
     `*${asset.name}*\n` +
     `• Prix : *${safe(price)} ${currency}*\n` +
-    `• Hebdo : *${rsiLabel(w?.current)}* (${safe(w?.current)})\n` +
-    `• Mensuel : *${rsiLabel(m?.current)}* (${safe(m?.current)})`
+    `• Hebdo : *${rsiLabel(w?.current)}* (${safe0(w?.current)})\n` +
+    `• Mensuel : *${rsiLabel(m?.current)}* (${safe0(m?.current)})`
   );
 }
 
