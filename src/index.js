@@ -155,6 +155,14 @@ const pad = (str, len) => String(str ?? '').padEnd(len, ' ').slice(0, len);
 
 const padRight = (str, len) => String(str ?? '').padStart(len, ' ').slice(-len);
 
+function rsiLabel(rsi) {
+  if (typeof rsi !== 'number') return '—';
+  if (rsi >= 70) return '🔥 Surachat';
+  if (rsi >= 60) return '📈 Haussier';
+  if (rsi >= 40) return '➖ Neutre';
+  if (rsi >= 30) return '📉 Baissier';
+  return '❄️ Survente';
+}
 
 function assetRow(asset, w, m, price, symbol) {
   const currency = asset.currency || '';
@@ -197,8 +205,8 @@ function assetSingleMessage(asset, w, m, price, symbol) {
   return (
     `*${asset.name}*\n` +
     `• Prix : *${safe(price)} ${currency}*\n` +
-    `• RSI hebdo : *${safe(w?.current)}* ${arrow(w?.current, w?.previous)}\n` +
-    `• RSI mensuel : *${safe(m?.current)}* ${arrow(m?.current, m?.previous)}`
+    `• Hebdomadaire : *`+rsiLabel(${safe(w?.current)})+`*\n` +
+    `• Mensuel : *`+rsiLabel(${safe(w?.current)})+`*`
   );
 }
 
