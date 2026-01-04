@@ -147,7 +147,7 @@ async function getRSI(symbol, interval, env) {
    FORMATAGE MESSAGE
 ======================= */
 
-const arrow = (c, p) => typeof c === 'number' && typeof p === 'number' ? c > p*1.01 ? '⬈' : c < p*0.99 ? '⬊' : '➞' : '➞';
+const arrow = (c, p) => typeof c === 'number' && typeof p === 'number' ? c > p*1.02 ? '⬈' : c < p*0.98 ? '⬊' : '➞' : '➞';
 
 const safe = v => typeof v === 'number' ? v.toFixed(1) : 'N/A';
 
@@ -175,7 +175,7 @@ function assetsTable(assetsRows) {
     pad('RSI M', 7);
 
   const separator =
-    '-------------|------------|---------|--------';
+    '------------------|------------|---------|--------';
 
   return (
     '```\n' +
