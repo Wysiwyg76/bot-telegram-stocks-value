@@ -333,7 +333,7 @@ async scheduled(_,env){
       const CHAT2_ASSETS = ['WPEA.PA'];
       //const items2 = await buildAssetsMessageForSubset(env, CHAT2_ASSETS);
       //const msg2 = buildFinalMessage(items1);
-      //await sendTelegram(env.TELEGRAM_CHAT_ID1,msg2,env);
+      //await sendTelegram(env.TELEGRAM_CHAT_ID1,msg2+`\n\n✨ Padawan ✨\nVenue est l’heure de ton investissement mensuel.\n`,env);
     }
   }
 
