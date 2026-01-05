@@ -169,7 +169,7 @@ function assetRow(asset, w, m, price, symbol) {
   const currency = asset.currency || '';
   return [
     pad(asset.name, 10),
-    pad(symbol, 7),
+    pad(symbol.replace(/\..*$/, ""), 7),
     padRight(`${safe(price)} ${currency}`, 10),
     pad(`${safe0(w?.current)} ${arrow(w?.current, w?.previous)}`, 5),
     pad(`${safe0(m?.current)} ${arrow(m?.current, m?.previous)}`, 5)
