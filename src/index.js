@@ -182,6 +182,8 @@ async function getRSI(symbol, interval, env) {
 
     const rsiSeries = calculateRSIseries(closes);
 
+    console.log(`RSI ${symbol} ${interval}`,rsiSeries);
+
     const currentRSI = rsiSeries.at(-1);
     const previousRSI = rsiSeries.at(-2);
 
