@@ -4,7 +4,7 @@ export const assetLabels = {
   'VERX.AS': { name: 'ETF Europe', currency: '€', group: 'region' },
   'PAASI.PA': { name: 'ETF Asie', currency: '€', group: 'region' },
   'DBXJ.DE': { name: 'ETF Japon', currency: '€', group: 'country' },
-  'SXRW.DE': { name: 'ETF UK', currency: '€', group: 'country' },
+  'SXRW.DE': { name: 'ETF U.K.', currency: '€', group: 'country' },
   '4BRZ.DE': { name: 'ETF Brésil', currency: '€', group: 'country' },
   'SW2CHB.SW': { name: 'ETF Suisse', currency: 'CHF', group: 'country' },
   'PPFB.DE': { name: 'ETC Gold', currency: '€', group: 'etc' },
@@ -12,6 +12,6 @@ export const assetLabels = {
   'COPA.L': { name: 'ETC Cuivre', currency: '$', group: 'etc' },
   'BTC-USD': { name: 'Bitcoin', currency: '$', group: 'crypto' },
   'ETH-USD': { name: 'Ethereum', currency: '$', group: 'crypto' },
-  'NVDA': { name: 'NVIDIA Corp', currency: '$', group: 'stocks' },
-  'MSTR': { name: 'Strategy Inc', currency: '$', group: 'stocks' },
+  'NVDA': { name: 'Nvidia', currency: '$', group: 'stocks' },
+  'MSTR': { name: 'Strategy', currency: '$', group: 'stocks' },
 };
