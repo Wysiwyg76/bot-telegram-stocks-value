@@ -8,29 +8,59 @@ import { assetLabels } from './assets.js';
 function getRemainingDaysInWeek() {
   const now = new Date();
 
-  const endOfWeek = new Date(now);
-  const day = now.getDay(); // 0 = dimanche, 6 = samedi
-  const daysUntilSunday = (7 - day) % 7;
+  const target = new Date(now);
+  const day = now.getDay(); // 0 = dimanche
 
-  endOfWeek.setDate(now.getDate() + daysUntilSunday);
-  endOfWeek.setHours(23, 59, 59, 999);
+  // Mardi = 2
+  let daysUntilTuesday = (2 - day + 7) % 7;
 
-  return endOfWeek - now;
+  target.setDate(now.getDate() + daysUntilTuesday);
+  target.setHours(9, 1, 0, 0);
+
+  // Si on est déjà passé après mardi 09:01 → semaine suivante
+  if (target <= now) {
+    target.setDate(target.getDate() + 7);
+  }
+
+  return target - now;
+}
+
+function getSecondBusinessDay(year, month) {
+  let date = new Date(year, month, 1);
+  let businessDays = 0;
+
+  while (true) {
+    const day = date.getDay();
+
+    if (day >= 1 && day <= 5) { // lundi → vendredi
+      businessDays++;
+      if (businessDays === 2) {
+        date.setHours(9, 1, 0, 0);
+        return date;
+      }
+    }
+    date.setDate(date.getDate() + 1);
+  }
 }
 
 function getRemainingDaysInMonth() {
   const now = new Date();
 
-  const endOfMonth = new Date(
+  let target = getSecondBusinessDay(
     now.getFullYear(),
-    now.getMonth() + 1, // mois suivant
-    0,                  // jour 0 = dernier jour du mois courant
-    23, 59, 59, 999
+    now.getMonth()
   );
 
-  return endOfMonth - now;
-}
+  // Si la date est déjà passée → mois suivant
+  if (target <= now) {
+    target = getSecondBusinessDay(
+      now.getFullYear(),
+      now.getMonth() + 1
+    );
+  }
 
+  return target - now;
+}
 
 const TTL = {
   PRICE: 24 * 60 * 60 * 1000,
