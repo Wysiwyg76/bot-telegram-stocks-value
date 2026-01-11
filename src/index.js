@@ -5,10 +5,37 @@ import { assetLabels } from './assets.js';
    CONSTANTES & UTILS
 ======================= */
 
+function getRemainingDaysInWeek() {
+  const now = new Date();
+
+  const endOfWeek = new Date(now);
+  const day = now.getDay(); // 0 = dimanche, 6 = samedi
+  const daysUntilSunday = (7 - day) % 7;
+
+  endOfWeek.setDate(now.getDate() + daysUntilSunday);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  return endOfWeek - now;
+}
+
+function getRemainingDaysInMonth() {
+  const now = new Date();
+
+  const endOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1, // mois suivant
+    0,                  // jour 0 = dernier jour du mois courant
+    23, 59, 59, 999
+  );
+
+  return endOfMonth - now;
+}
+
+
 const TTL = {
   PRICE: 24 * 60 * 60 * 1000,
-  RSI_WEEKLY: 7 * 24 * 60 * 60 * 1000,
-  RSI_MONTHLY: 30 * 24 * 60 * 60 * 1000
+  RSI_WEEKLY: getRemainingDaysInWeek(),
+  RSI_MONTHLY: getRemainingDaysInMonth(),
 };
 
 const now = () => Date.now();
