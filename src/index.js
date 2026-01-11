@@ -63,9 +63,9 @@ function getRemainingDaysInMonth() {
 }
 
 const TTL = {
-  PRICE: 24 * 60 * 60 * 1000,
-  RSI_WEEKLY: getRemainingDaysInWeek(),
-  RSI_MONTHLY: getRemainingDaysInMonth(),
+  PRICE: 24 * 60 * 60 * 1000, // 24h
+  RSI_WEEKLY: getRemainingDaysInWeek(), // temps jusqu'à mardi 9h01
+  RSI_MONTHLY: getRemainingDaysInMonth(), // temps jusqu'au 2ème jour ouvré du mois prochain
 };
 
 const now = () => Date.now();
