@@ -7,6 +7,7 @@ export const assetLabels = {
   'SXRW.DE': { name: 'ETF UK', currency: '€', group: 'country' },
   '4BRZ.DE': { name: 'ETF Brésil', currency: '$', group: 'country' },
   'SW2CHB.SW': { name: 'ETF Suisse', currency: 'CHF', group: 'country' },
+  'MFA8.PA': { name: 'ETF CTA', currency: '$', group: 'hedge' },
   'PPFB.DE': { name: 'ETC Gold', currency: '€', group: 'etc' },
   'PPFD.SG': { name: 'ETC Silver', currency: '$', group: 'etc' },
   'CO2.L': { name: 'ETC Carbon', currency: '€', group: 'etc' },
