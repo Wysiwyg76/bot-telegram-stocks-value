@@ -5,7 +5,7 @@ export const assetLabels = {
   'PAASI.PA': { name: 'ETF Asie', currency: '€', group: 'region' },
   'LCUJ.DE': { name: 'ETF Japon', currency: '¥', group: 'country' },
   'SXRW.DE': { name: 'ETF UK', currency: '€', group: 'country' },
-  '4BRZ.DE': { name: 'ETF Brésil', currency: '€', group: 'country' },
+  '4BRZ.DE': { name: 'ETF Brésil', currency: '$', group: 'country' },
   'SW2CHB.SW': { name: 'ETF Suisse', currency: 'CHF', group: 'country' },
   'PPFB.DE': { name: 'ETC Gold', currency: '€', group: 'etc' },
   'PPFD.SG': { name: 'ETC Silver', currency: '$', group: 'etc' },
