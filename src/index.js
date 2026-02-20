@@ -387,13 +387,6 @@ async scheduled(_,env){
     const firstDayOfMonth = new Date(today.getFullYear(),today.getMonth(),1).getDay();
     const daysUntilFirstTuesday = (2-firstDayOfMonth+7)%7;
     const secondTuesday = 1 + daysUntilFirstTuesday + 7;
-
-    if(dayOfMonth===secondTuesday){
-      const CHAT2_ASSETS = ['WPEA.PA'];
-      //const items2 = await buildAssetsMessageForSubset(env, CHAT2_ASSETS);
-      //const msg2 = buildFinalMessage(items1);
-      //await sendTelegram(env.TELEGRAM_CHAT_ID1,msg2+`\n\n✨ Padawan ✨\nVenue est l’heure de ton investissement mensuel.\n`,env);
-    }
   }
 
 };
