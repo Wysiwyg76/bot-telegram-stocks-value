@@ -250,9 +250,9 @@ function assetsTable(assetsRows) {
   var group = '';
 
   const rows = assetsRows.map(i => {
-    var sep = i.asset['group'] != group ? separator : '';
+    var sep = i.asset['group'] != group ? separator + '\n' : '';
     group = i.asset['group'];
-    return sep.assetRow(i.asset, i.w, i.m, i.price, i.symbol);
+    return sep+assetRow(i.asset, i.w, i.m, i.price, i.symbol);
   });
 
   return (
