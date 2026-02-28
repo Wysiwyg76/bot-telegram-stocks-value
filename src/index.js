@@ -206,7 +206,7 @@ async function getRSI(symbol, interval, env) {
    FORMATAGE MESSAGE
 ======================= */
 
-const arrow = (c, p) => typeof c === 'number' && typeof p === 'number' ? c > p*1.02 ? '⬈' : c < p*0.98 ? '⬊' : '➞' : '➞';
+const arrow = (c, p) => typeof c === 'number' && typeof p === 'number' ? c > p*1.04 ? '⬈' : c < p*0.96 ? '⬊' : '➞' : '➞';
 
 const safe0 = v => typeof v === 'number' ? v.toFixed(0) : 'N/A';
 const safe = v => typeof v === 'number' ? v.toFixed(1) : 'N/A';
@@ -214,6 +214,8 @@ const safe = v => typeof v === 'number' ? v.toFixed(1) : 'N/A';
 const pad = (str, len) => String(str ?? '').padEnd(len, ' ').slice(0, len);
 
 const padRight = (str, len) => String(str ?? '').padStart(len, ' ').slice(-len);
+
+const separator = '-----------|---------|------------|-------|-------';
 
 function rsiLabel(rsi) {
   if (typeof rsi !== 'number') return '—';
@@ -245,11 +247,12 @@ function assetsTable(assetsRows) {
     pad('RSI W', 5) + ' | ' +
     pad('RSI M', 5);
 
-  const separator =
-    '-----------|---------|------------|-------|-------';
+  var group = '';
 
   const rows = assetsRows.map(i => {
-    return assetRow(i.asset, i.w, i.m, i.price, i.symbol);
+    var sep = i.asset['group'] != group ? separator : '';
+    group = i.asset['group'];
+    return sep.assetRow(i.asset, i.w, i.m, i.price, i.symbol);
   });
 
   return (
