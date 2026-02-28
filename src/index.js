@@ -378,7 +378,7 @@ async scheduled(_,env){
     const dayOfMonth = today.getDate();
 
     // Chat1 à chaque fois
-    const CHAT1_ASSETS = ['ESE.PA','VERX.AS','PAASI.PA','DBXJ.DE','4BRZ.DE','PPFB.DE','BTC-USD'];
+    const CHAT1_ASSETS = ['ESE.PA','VERX.AS','PAASI.PA','LCUJ.DE','4BRZ.DE','PPFB.DE','BTC-USD'];
     const items1 = await buildAssetsMessageForSubset(env, CHAT1_ASSETS);
     const msg1 = buildFinalMessage(items1);
     await sendTelegram(env.TELEGRAM_CHAT_ID1,msg1,env);
